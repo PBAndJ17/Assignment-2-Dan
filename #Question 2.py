@@ -28,6 +28,8 @@ def decrypt_file(filename, key):
         file.truncate()
     print("Decrypted successfully")
 
+
+
 filename = "raw_text.txt"
 
 if __name__ == "__main__":

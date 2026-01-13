@@ -43,42 +43,51 @@ def encrypt_char(char, shift1, shift2):
 def decrypt_char(char, shift1, shift2):
     """
     Decrypt a single character by reversing the encryption rules.
+    We try both possible original positions and pick the one that makes sense.
     """
     if 'a' <= char <= 'z':
-        # For lowercase, we need to determine which half the ORIGINAL char was in
-        # Try reversing first half encryption (forward shift by shift1 * shift2)
+        # Try both possibilities and see which original position is valid
+        
+        # Possibility 1: Original was in first half (a-m), encrypted with forward shift
         shift_first = shift1 * shift2
-        original_pos_first = (ord(char) - ord('a') - shift_first) % 26
+        pos_if_first = (ord(char) - ord('a') - shift_first) % 26
         
-        # Try reversing second half encryption (backward shift by shift1 + shift2)
+        # Possibility 2: Original was in second half (n-z), encrypted with backward shift  
         shift_second = shift1 + shift2
-        original_pos_second = (ord(char) - ord('a') + shift_second) % 26
+        pos_if_second = (ord(char) - ord('a') + shift_second) % 26
         
-        # Check which reversal gives us a position in the correct half
-        if 0 <= original_pos_first <= 12:
-            # This would mean original was in first half (a-m)
-            return chr(ord('a') + original_pos_first)
+        # Check which possibility has the position in the correct half
+        if 0 <= pos_if_first <= 12:
+            # pos_if_first is in first half range, so this must be correct
+            return chr(ord('a') + pos_if_first)
+        elif 13 <= pos_if_second <= 25:
+            # pos_if_second is in second half range, so this must be correct
+            return chr(ord('a') + pos_if_second)
         else:
-            # Original must have been in second half (n-z)
-            return chr(ord('a') + original_pos_second)
+            # Edge case: if neither fits perfectly, use the second half logic
+            return chr(ord('a') + pos_if_second)
     
     elif 'A' <= char <= 'Z':
-        # For uppercase, determine which half the ORIGINAL char was in
-        # Try reversing first half encryption (backward shift by shift1)
+        # Try both possibilities and see which original position is valid
+        
+        # Possibility 1: Original was in first half (A-M), encrypted with backward shift
         shift_first = shift1
-        original_pos_first = (ord(char) - ord('A') + shift_first) % 26
+        pos_if_first = (ord(char) - ord('A') + shift_first) % 26
         
-        # Try reversing second half encryption (forward shift by shift2²)
+        # Possibility 2: Original was in second half (N-Z), encrypted with forward shift
         shift_second = shift2 ** 2
-        original_pos_second = (ord(char) - ord('A') - shift_second) % 26
+        pos_if_second = (ord(char) - ord('A') - shift_second) % 26
         
-        # Check which reversal gives us a position in the correct half
-        if 0 <= original_pos_first <= 12:
-            # This would mean original was in first half (A-M)
-            return chr(ord('A') + original_pos_first)
+        # Check which possibility has the position in the correct half
+        if 0 <= pos_if_first <= 12:
+            # pos_if_first is in first half range, so this must be correct
+            return chr(ord('A') + pos_if_first)
+        elif 13 <= pos_if_second <= 25:
+            # pos_if_second is in second half range, so this must be correct
+            return chr(ord('A') + pos_if_second)
         else:
-            # Original must have been in second half (N-Z)
-            return chr(ord('A') + original_pos_second)
+            # Edge case: if neither fits perfectly, use the second half logic
+            return chr(ord('A') + pos_if_second)
     
     else:
         # All other characters (spaces, numbers, special chars) remain unchanged

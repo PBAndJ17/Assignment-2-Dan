@@ -43,37 +43,34 @@ def encrypt_char(char, shift1, shift2):
 def decrypt_char(char, shift1, shift2):
     """
     Decrypt a single character by reversing the encryption rules.
+    We need to try both possibilities and see which gives a valid result.
     """
     if 'a' <= char <= 'z':
-        # Check if it was originally in first half (a-m)
-        # Try reversing the forward shift
+        # Try as if it was originally from first half (a-m) - reverse forward shift
         shift = shift1 * shift2
         original_pos = (ord(char) - ord('a') - shift) % 26
-        if 0 <= original_pos <= 12:  # Was in first half
+        if 0 <= original_pos <= 12:  # Confirms it was in first half
             return chr(ord('a') + original_pos)
         
-        # Otherwise it was in second half (n-z)
-        # Reverse the backward shift
+        # Otherwise it must be from second half (n-z) - reverse backward shift
         shift = shift1 + shift2
         original_pos = (ord(char) - ord('a') + shift) % 26
         return chr(ord('a') + original_pos)
     
     elif 'A' <= char <= 'Z':
-        # Check if it was originally in first half (A-M)
-        # Try reversing the backward shift
+        # Try as if it was originally from first half (A-M) - reverse backward shift
         shift = shift1
         original_pos = (ord(char) - ord('A') + shift) % 26
-        if 0 <= original_pos <= 12:  # Was in first half
+        if 0 <= original_pos <= 12:  # Confirms it was in first half
             return chr(ord('A') + original_pos)
         
-        # Otherwise it was in second half (N-Z)
-        # Reverse the forward shift
+        # Otherwise it must be from second half (N-Z) - reverse forward shift
         shift = shift2 ** 2
         original_pos = (ord(char) - ord('A') - shift) % 26
         return chr(ord('A') + original_pos)
     
     else:
-        # All other characters remain unchanged
+        # All other characters (spaces, numbers, special chars) remain unchanged
         return char
 
 

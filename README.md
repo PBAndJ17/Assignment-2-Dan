@@ -1,7 +1,20 @@
 # Question 1
 
-[View Solution for Question 1](Question-1.py)
+Here is the code link 👉
+[𝕔𝕝𝕚𝕔𝕜](Question-1.py)
 
 ## Screenshot of Question 1 output
 
-[![Alt Text](image-url.png)](https://destination-link.com)
+
+![Alt Text](Question_1_terminal_SS.png)
+
+___________   
+# Question 2
+
+Here is the code link 👉
+[𝕔𝕝𝕚𝕔𝕜](Question-1.py)
+
+# Question 3
+
+Here is the code link 👉
+[𝕔𝕝𝕚𝕔𝕜](Question-1.py)

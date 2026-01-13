@@ -117,7 +117,3 @@ main()
 
 
 
-
-
-#image show
-![Alt text](image-url)

@@ -12,9 +12,9 @@ ___________
 # Question 2
 
 Here is the code link 👉
-[𝕔𝕝𝕚𝕔𝕜](#Question 2.py)
+[𝕔𝕝𝕚𝕔𝕜](Question-2.py)
 
 # Question 3
 
 Here is the code link 👉
-[𝕔𝕝𝕚𝕔𝕜](Question-1.py)
+[𝕔𝕝𝕚𝕔𝕜](Question-3.py)

@@ -43,31 +43,42 @@ def encrypt_char(char, shift1, shift2):
 def decrypt_char(char, shift1, shift2):
     """
     Decrypt a single character by reversing the encryption rules.
-    We need to try both possibilities and see which gives a valid result.
     """
     if 'a' <= char <= 'z':
-        # Try as if it was originally from first half (a-m) - reverse forward shift
-        shift = shift1 * shift2
-        original_pos = (ord(char) - ord('a') - shift) % 26
-        if 0 <= original_pos <= 12:  # Confirms it was in first half
-            return chr(ord('a') + original_pos)
+        # For lowercase, we need to determine which half the ORIGINAL char was in
+        # Try reversing first half encryption (forward shift by shift1 * shift2)
+        shift_first = shift1 * shift2
+        original_pos_first = (ord(char) - ord('a') - shift_first) % 26
         
-        # Otherwise it must be from second half (n-z) - reverse backward shift
-        shift = shift1 + shift2
-        original_pos = (ord(char) - ord('a') + shift) % 26
-        return chr(ord('a') + original_pos)
+        # Try reversing second half encryption (backward shift by shift1 + shift2)
+        shift_second = shift1 + shift2
+        original_pos_second = (ord(char) - ord('a') + shift_second) % 26
+        
+        # Check which reversal gives us a position in the correct half
+        if 0 <= original_pos_first <= 12:
+            # This would mean original was in first half (a-m)
+            return chr(ord('a') + original_pos_first)
+        else:
+            # Original must have been in second half (n-z)
+            return chr(ord('a') + original_pos_second)
     
     elif 'A' <= char <= 'Z':
-        # Try as if it was originally from first half (A-M) - reverse backward shift
-        shift = shift1
-        original_pos = (ord(char) - ord('A') + shift) % 26
-        if 0 <= original_pos <= 12:  # Confirms it was in first half
-            return chr(ord('A') + original_pos)
+        # For uppercase, determine which half the ORIGINAL char was in
+        # Try reversing first half encryption (backward shift by shift1)
+        shift_first = shift1
+        original_pos_first = (ord(char) - ord('A') + shift_first) % 26
         
-        # Otherwise it must be from second half (N-Z) - reverse forward shift
-        shift = shift2 ** 2
-        original_pos = (ord(char) - ord('A') - shift) % 26
-        return chr(ord('A') + original_pos)
+        # Try reversing second half encryption (forward shift by shift2²)
+        shift_second = shift2 ** 2
+        original_pos_second = (ord(char) - ord('A') - shift_second) % 26
+        
+        # Check which reversal gives us a position in the correct half
+        if 0 <= original_pos_first <= 12:
+            # This would mean original was in first half (A-M)
+            return chr(ord('A') + original_pos_first)
+        else:
+            # Original must have been in second half (N-Z)
+            return chr(ord('A') + original_pos_second)
     
     else:
         # All other characters (spaces, numbers, special chars) remain unchanged

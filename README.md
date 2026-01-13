@@ -8,6 +8,13 @@ Here is the code link 👉
 
 ![Alt Text](Question_1_terminal_SS.png)
 
+Here is encrypted_text.txt 👉
+[𝕔𝕝𝕚𝕔𝕜](encrypted_text.txt)
+
+
+Here is decrypted_text.txt 👉
+[𝕔𝕝𝕚𝕔𝕜](decrypted_text.txt)
+
 ___________   
 # Question 2
 

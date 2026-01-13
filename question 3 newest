@@ -1,108 +1,47 @@
-import turtle
-import math
+import turtle #importing turtle into python
 
-def draw_indented_line(t, length, depth):
-    """
-    Recursively draws a line with inward indentations.
-    
-    Parameters:
-    t: turtle object
-    length: length of the current segment
-    depth: recursion depth remaining
-    """
+#Function to draw one side of polygon using recursion
+
+def polygon(t, length, depth):
+    # For 0 depth draws straight line
     if depth == 0:
-        # Base case: draw a straight line
         t.forward(length)
-    else:
-        # Divide the line into three equal segments
-        segment_length = length / 3
-        
-        # Draw first segment
-        draw_indented_line(t, segment_length, depth - 1)
-        
-        # Turn right to create inward indentation (60 degrees for equilateral triangle)
-        t.right(60)
-        
-        # Draw second segment (first side of the triangle pointing inward)
-        draw_indented_line(t, segment_length, depth - 1)
-        
-        # Turn right 120 degrees to draw the other side of the triangle
-        t.right(120)
-        
-        # Draw third segment (second side of the triangle pointing inward)
-        draw_indented_line(t, segment_length, depth - 1)
-        
-        # Turn right to continue in the original direction
-        t.right(60)
-        
-        # Draw fourth segment
-        draw_indented_line(t, segment_length, depth - 1)
+        return
+    # Divide the length into 3 parts
+    third = length / 3
 
-def draw_polygon_pattern(sides, side_length, depth):
-    """
-    Draws a polygon with recursive indented patterns on each edge.
-    
-    Parameters:
-    sides: number of sides of the polygon
-    side_length: length of each side
-    depth: recursion depth for the pattern
-    """
-    # Set up the turtle
+    polygon(t, third, depth - 1)
+    t.right(60)
+    polygon(t, third, depth - 1)
+    t.left(120)
+    polygon(t, third, depth - 1)
+    t.right(60)
+    polygon(t, third, depth - 1)
+
+# Function to draw the shape completely
+
+def draw_shape(sides, length, depth):
     screen = turtle.Screen()
-    screen.setup(width=1000, height=1000)
     screen.title("Recursive Geometric Pattern")
-    
-    t = turtle.Turtle()
-    t.speed(0)  # Fastest drawing speed
-    t.color("blue")
-    
-    # Calculate the exterior angle for the polygon
-    exterior_angle = 360 / sides
-    
-    # Position the turtle to start drawing from a centered position
-    t.penup()
-    t.goto(0, 0)
-    t.setheading(0)
-    t.pendown()
-    
-    # Draw each side of the polygon with the recursive pattern
-    for _ in range(sides):
-        draw_indented_line(t, side_length, depth)
-        t.left(exterior_angle)
-    
-    # Hide turtle and keep window open
-    t.hideturtle()
-    screen.mainloop()
 
-def main():
-    """
-    Main function to get user input and generate the pattern.
-    """
-    try:
-        # Get user input
-        sides = int(input("Enter the number of sides: "))
-        side_length = float(input("Enter the side length: "))
-        depth = int(input("Enter the recursion depth: "))
-        
-        # Validate input
-        if sides < 3:
-            print("Error: Number of sides must be at least 3.")
-            return
-        if side_length <= 0:
-            print("Error: Side length must be positive.")
-            return
-        if depth < 0:
-            print("Error: Recursion depth cannot be negative.")
-            return
-        
-        # Generate the pattern
-        print(f"\nGenerating pattern with {sides} sides, side length {side_length}, and depth {depth}...")
-        draw_polygon_pattern(sides, side_length, depth)
-        
-    except ValueError:
-        print("Error: Please enter valid numeric values.")
-    except Exception as e:
-        print(f"An error occurred: {e}")
+    t = turtle.Turtle()
+    t.speed(0)
+
+    # Calculate the angle for the turtle to turn after each side
+    angle = 360 / sides
+
+    for i in range(sides):
+        polygon(t, length, depth)
+        t.right(angle)
+
+    screen.update()
+    turtle.done()
+
 
 if __name__ == "__main__":
-    main()
+    # To get the users input
+    sides = int(input("Enter the number of sides: "))
+    length = float(input("Enter the side length: "))
+    depth = int(input("Enter the recursion depth: "))
+
+    draw_shape(sides, length, depth)

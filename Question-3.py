@@ -26,7 +26,7 @@ def draw_shape(sides, length, depth):
 
     t = turtle.Turtle()
     t.speed(0)
-
+    t.home()
     # Calculate the angle for the turtle to turn after each side
     angle = 360 / sides
 

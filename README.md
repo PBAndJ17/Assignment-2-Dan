@@ -1,7 +1,7 @@
 # Question 1
 
 Here is the code link 👉
-[𝕔𝕝𝕚𝕔𝕜](Question-1.py)
+[𝕔𝕝𝕚𝕔𝕜](Question%1/question_1.py)
 
 ## Screenshot of Question 1 output
 

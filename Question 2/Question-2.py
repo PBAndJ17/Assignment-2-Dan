@@ -1,213 +1,240 @@
+# to generate 3 file 
+#1) average_temp.txt
+#2) largest_temp_range_station.txt
+#3) temperature_stability_stations.txt
+#
+# Notes:
+#ignores missing values (NaN / empty).
+# Seasons (Australia):
+#Summer: Dec-Feb, Autumn: Mar-May, Winter: Jun-Aug, Spring: Sep-Nov
+
 import os
-import pandas as pd
+import csv
+import math
+
+MONTHS = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+]
+
+SEASONS = {
+    "Summer": ["December", "January", "February"],
+    "Autumn": ["March", "April", "May"],
+    "Winter": ["June", "July", "August"],
+    "Spring": ["September", "October", "November"],
+}
+
+STATION_COL = "STATION_NAME"
 
 
-def load_all_temperature_data(folder_path="temperatures"):
+def is_missing(value_str):
+    """Return True if the CSV value is missing/NaN/empty."""
+    if value_str is None:
+        return True
+    s = str(value_str).strip()
+    if s == "":
+        return True
+    if s.lower() == "nan":
+        return True
+    return False
+
+
+def to_float_or_none(value_str):
+    """Convert to float or return None if missing."""
+    if is_missing(value_str):
+        return None
+    try:
+        return float(value_str)
+    except ValueError:
+        return None
+
+
+def mean(values):
+    """Average of a list (assumes list is non-empty)."""
+    return sum(values) / len(values)
+
+
+def pop_stddev(values):
     """
-    Load all CSV files from the temperatures folder and combine them
-    into a single DataFrame.
+    Population standard deviation.
+    If only 1 value, stddev = 0.0.
     """
-    all_data = []
-
-    if not os.path.exists(folder_path):
-        print(f"Error: '{folder_path}' folder not found!")
-        return pd.DataFrame()
-
-    csv_files = [f for f in os.listdir(folder_path) if f.endswith(".csv")]
-
-    if not csv_files:
-        print(f"No CSV files found in '{folder_path}' folder!")
-        return pd.DataFrame()
-
-    print(f"Found {len(csv_files)} CSV file(s). Loading data...")
-
-    for file in csv_files:
-        file_path = os.path.join(folder_path, file)
-        try:
-            df = pd.read_csv(file_path)
-            all_data.append(df)
-            print(f"Loaded: {file}")
-        except Exception as e:
-            print(f"Error loading {file}: {e}")
-
-    combined_df = pd.concat(all_data, ignore_index=True)
-    print(f"Total records loaded: {len(combined_df)}")
-    return combined_df
+    if len(values) <= 1:
+        return 0.0
+    m = mean(values)
+    var = sum((x - m) ** 2 for x in values) / len(values)
+    return math.sqrt(var)
 
 
-def get_season(month):
+def find_csv_files():
     """
-    Return Australian season based on month number.
+    Find all CSV files inside a folder called 'temperatures'.
+    If that folder does not exist, use the current folder as fallback.
     """
-    if month in [12, 1, 2]:
-        return "Summer"
-    elif month in [3, 4, 5]:
-        return "Autumn"
-    elif month in [6, 7, 8]:
-        return "Winter"
-    elif month in [9, 10, 11]:
-        return "Spring"
-    return None
+    folder = "temperatures"
+    if os.path.isdir(folder):
+        base = folder
+    else:
+        base = "."  # fallback
+
+    csv_files = []
+    for name in os.listdir(base):
+        if name.lower().endswith(".csv"):
+            csv_files.append(os.path.join(base, name))
+
+    csv_files.sort()
+    return csv_files
 
 
-def calculate_seasonal_averages(df):
+def process_all_files(csv_files):
     """
-    Calculate average temperature for each season across
-    all stations and all years.
-    Results saved to 'average_temp.txt'.
+    Reads all CSV files and builds:
+    1) Seasonal values across all stations and years
+    2) Per-station list of all temperature values (all months, all years)
     """
-    print("\nCalculating Seasonal Average Temperatures...")
+    # For seasonal average across ALL stations and ALL years
+    season_values = {s: [] for s in SEASONS.keys()}
 
-    date_col = None
-    temp_col = None
+    # For station range and station stability
+    # station_temps[station_name] = [all temps across all files/months]
+    station_temps = {}
 
-    for col in df.columns:
-        if "date" in col.lower():
-            date_col = col
-        if "temp" in col.lower() and "station" not in col.lower():
-            temp_col = col
+    for path in csv_files:
+        with open(path, "r", encoding="utf-8-sig", newline="") as f:
+            reader = csv.DictReader(f)
 
-    if date_col is None or temp_col is None:
-        print("Error: Date or temperature column not found.")
-        print("Available columns:", df.columns.tolist())
+            # Basic column checks
+            if STATION_COL not in reader.fieldnames:
+                raise ValueError("Missing required column: " + STATION_COL)
+
+            for m in MONTHS:
+                if m not in reader.fieldnames:
+                    raise ValueError("Missing month column: " + m + " in file " + path)
+
+            for row in reader:
+                station = (row.get(STATION_COL) or "").strip()
+                if station == "":
+                    continue
+
+                if station not in station_temps:
+                    station_temps[station] = []
+
+                # Collect monthly temperatures for this row/station
+                month_value = {}
+                for m in MONTHS:
+                    v = to_float_or_none(row.get(m))
+                    month_value[m] = v
+                    if v is not None:
+                        station_temps[station].append(v)
+
+                # Add values to seasons (each month belongs to one season)
+                for season_name, season_months in SEASONS.items():
+                    for sm in season_months:
+                        v = month_value.get(sm)
+                        if v is not None:
+                            season_values[season_name].append(v)
+
+    return season_values, station_temps
+
+
+def write_seasonal_averages(season_values):
+    """
+    Writes average temperature for each season to average_temp.txt
+    Format example: Summer: 28.5C
+    """
+    with open("average_temp.txt", "w", encoding="utf-8") as out:
+        for season_name in ["Summer", "Autumn", "Winter", "Spring"]:
+            vals = season_values[season_name]
+            if len(vals) == 0:
+                out.write(season_name + ": No data\n")
+            else:
+                avg = mean(vals)
+                out.write(f"{season_name}: {avg:.2f}C\n")
+
+
+def write_largest_range(station_temps):
+    """
+    Finds station(s) with largest (max-min) across all values.
+    Writes to largest_temp_range_station.txt
+    """
+    best_range = None
+    best_list = []
+
+    # Compute range for each station
+    station_stats = {}  # station -> (min, max, range)
+    for station, temps in station_temps.items():
+        if len(temps) == 0:
+            continue
+        mn = min(temps)
+        mx = max(temps)
+        r = mx - mn
+        station_stats[station] = (mn, mx, r)
+
+        if best_range is None or r > best_range + 1e-12:
+            best_range = r
+            best_list = [station]
+        elif abs(r - best_range) <= 1e-12:
+            best_list.append(station)
+
+    with open("largest_temp_range_station.txt", "w", encoding="utf-8") as out:
+        if best_range is None:
+            out.write("No data available.\n")
+            return
+
+        best_list.sort()
+        for station in best_list:
+            mn, mx, r = station_stats[station]
+            out.write(f"{station}: Range {r:.2f}C (Max: {mx:.2f}C, Min: {mn:.2f}C)\n")
+
+
+def write_stability(station_temps):
+    """
+    Finds most stable (smallest std dev) and most variable (largest std dev).
+    Writes to temperature_stability_stations.txt
+    """
+    station_sd = []
+    for station, temps in station_temps.items():
+        if len(temps) == 0:
+            continue
+        sd = pop_stddev(temps)
+        station_sd.append((station, sd))
+
+    if len(station_sd) == 0:
+        with open("temperature_stability_stations.txt", "w", encoding="utf-8") as out:
+            out.write("No data available.\n")
         return
 
-    df["date_parsed"] = pd.to_datetime(df[date_col], errors="coerce")
-    df["month"] = df["date_parsed"].dt.month
-    df["season"] = df["month"].apply(get_season)
+    min_sd = min(sd for _, sd in station_sd)
+    max_sd = max(sd for _, sd in station_sd)
 
-    seasonal_avg = df.groupby("season")[temp_col].mean()
+    most_stable = sorted([s for s, sd in station_sd if abs(sd - min_sd) <= 1e-12])
+    most_variable = sorted([s for s, sd in station_sd if abs(sd - max_sd) <= 1e-12])
 
-    season_order = ["Summer", "Autumn", "Winter", "Spring"]
-    seasonal_avg = seasonal_avg.reindex(season_order)
-
-    with open("average_temp.txt", "w") as f:
-        f.write("Seasonal Average Temperatures (All Stations, All Years)\n")
-        f.write("=" * 60 + "\n\n")
-        for season, avg in seasonal_avg.items():
-            if not pd.isna(avg):
-                line = f"{season}: {avg:.1f}°C\n"
-                f.write(line)
-                print(line.strip())
-
-    print("Saved results to 'average_temp.txt'")
-
-
-def find_largest_temperature_range(df):
-    """
-    Find station(s) with the largest temperature range.
-    Results saved to 'largest_temp_range_station.txt'.
-    """
-    print("\nFinding Largest Temperature Range...")
-
-    station_col = None
-    temp_col = None
-
-    for col in df.columns:
-        if "station" in col.lower():
-            station_col = col
-        if "temp" in col.lower() and "station" not in col.lower():
-            temp_col = col
-
-    if station_col is None or temp_col is None:
-        print("Error: Station or temperature column not found.")
-        return
-
-    stats = df.groupby(station_col)[temp_col].agg(["min", "max"])
-    stats["range"] = stats["max"] - stats["min"]
-
-    max_range = stats["range"].max()
-    top_stations = stats[stats["range"] == max_range]
-
-    with open("largest_temp_range_station.txt", "w") as f:
-        f.write("Station(s) with Largest Temperature Range\n")
-        f.write("=" * 60 + "\n\n")
-        for station, row in top_stations.iterrows():
-            line = (
-                f"Station {station}: Range {row['range']:.1f}°C "
-                f"(Max: {row['max']:.1f}°C, Min: {row['min']:.1f}°C)\n"
-            )
-            f.write(line)
-            print(line.strip())
-
-    print("Saved results to 'largest_temp_range_station.txt'")
-
-
-def find_temperature_stability(df):
-    """
-    Identify the most stable and most variable stations based on
-    standard deviation of temperature.
-    Results saved to 'temperature_stability_stations.txt'.
-    """
-    print("\nFinding Temperature Stability...")
-
-    station_col = None
-    temp_col = None
-
-    for col in df.columns:
-        if "station" in col.lower():
-            station_col = col
-        if "temp" in col.lower() and "station" not in col.lower():
-            temp_col = col
-
-    if station_col is None or temp_col is None:
-        print("Error: Station or temperature column not found.")
-        return
-
-    std_dev = df.groupby(station_col)[temp_col].std()
-
-    min_std = std_dev.min()
-    max_std = std_dev.max()
-
-    most_stable = std_dev[std_dev == min_std]
-    most_variable = std_dev[std_dev == max_std]
-
-    with open("temperature_stability_stations.txt", "w") as f:
-        f.write("Temperature Stability Analysis\n")
-        f.write("=" * 60 + "\n\n")
-
-        f.write("Most Stable Station(s):\n")
-        for station, val in most_stable.items():
-            line = f"Station {station}: StdDev {val:.1f}°C\n"
-            f.write(line)
-            print("Most Stable:", line.strip())
-
-        f.write("\nMost Variable Station(s):\n")
-        for station, val in most_variable.items():
-            line = f"Station {station}: StdDev {val:.1f}°C\n"
-            f.write(line)
-            print("Most Variable:", line.strip())
-
-    print("Saved results to 'temperature_stability_stations.txt'")
+    with open("temperature_stability_stations.txt", "w", encoding="utf-8") as out:
+        # List all ties
+        for s in most_stable:
+            out.write(f"Most Stable: {s}: StdDev {min_sd:.2f}C\n")
+        for s in most_variable:
+            out.write(f"Most Variable: {s}: StdDev {max_sd:.2f}C\n")
 
 
 def main():
-    """
-    Main program execution.
-    """
-    print("=" * 60)
-    print("Temperature Data Analysis Program")
-    print("=" * 60)
-
-    df = load_all_temperature_data()
-
-    if df.empty:
-        print("No data loaded. Please check the temperatures folder.")
+    csv_files = find_csv_files()
+    if len(csv_files) == 0:
+        print("No CSV files found.")
+        print('Put all year CSV files into a folder named "temperatures", or in this folder.')
         return
 
-    print("Columns found:", df.columns.tolist())
+    season_values, station_temps = process_all_files(csv_files)
 
-    calculate_seasonal_averages(df)
-    find_largest_temperature_range(df)
-    find_temperature_stability(df)
+    write_seasonal_averages(season_values)
+    write_largest_range(station_temps)
+    write_stability(station_temps)
 
-    print("\nAnalysis complete!")
-    print("Output files created:")
-    print(" - average_temp.txt")
-    print(" - largest_temp_range_station.txt")
-    print(" - temperature_stability_stations.txt")
-    print("=" * 60)
+    print("Done.")
+    print("Created: average_temp.txt")
+    print("Created: largest_temp_range_station.txt")
+    print("Created: temperature_stability_stations.txt")
 
 
-if __name__ == "__main__":
-    main()
+main()

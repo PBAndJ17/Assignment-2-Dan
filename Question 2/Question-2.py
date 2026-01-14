@@ -3,11 +3,12 @@ import os
 import csv
 import math
 
+# List of all months in CSV file
 MONTHS = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
 ]
-
+# List of Australian Seasons with months
 SEASONS = {
     "Summer": ["December", "January", "February"],
     "Autumn": ["March", "April", "May"],
@@ -17,7 +18,7 @@ SEASONS = {
 
 STATION_COL = "STATION_NAME"
 
-
+# Check to see whether a CSV value is missing
 def is_missing(value_str):
     """Return True if the CSV value is missing/NaN/empty."""
     if value_str is None:
@@ -31,7 +32,7 @@ def is_missing(value_str):
 
 
 def to_float_or_none(value_str):
-    """Convert to float or return None if missing."""
+   
     if is_missing(value_str):
         return None
     try:
@@ -39,29 +40,23 @@ def to_float_or_none(value_str):
     except ValueError:
         return None
 
-
+# Calculate the mean(Average)
 def mean(values):
-    """Average of a list (assumes list is non-empty)."""
+
     return sum(values) / len(values)
 
-
+# Calculate the S.D
+#If only one value exists, the deviation is zero
 def pop_stddev(values):
-    """
-    Population standard deviation.
-    If only 1 value, stddev = 0.0.
-    """
+
     if len(values) <= 1:
         return 0.0
     m = mean(values)
     var = sum((x - m) ** 2 for x in values) / len(values)
     return math.sqrt(var)
 
-
+# Find all CSV files in the folder named "temperatures"
 def find_csv_files():
-    """
-    Find all CSV files inside a folder called 'temperatures'.
-    If that folder does not exist, use the current folder as fallback.
-    """
     folder = "temperatures"
     if os.path.isdir(folder):
         base = folder
@@ -76,7 +71,7 @@ def find_csv_files():
     csv_files.sort()
     return csv_files
 
-
+# To process all csv files and collect required data
 def process_all_files(csv_files):
     
     season_values = {s: [] for s in SEASONS.keys()}
@@ -94,7 +89,8 @@ def process_all_files(csv_files):
             for m in MONTHS:
                 if m not in reader.fieldnames:
                     raise ValueError("Missing month column: " + m + " in file " + path)
-
+            
+            # Process each row in CSV file
             for row in reader:
                 station = (row.get(STATION_COL) or "").strip()
                 if station == "":
@@ -118,7 +114,7 @@ def process_all_files(csv_files):
 
     return season_values, station_temps
 
-
+# Write seasonal average temperature in the file
 def write_seasonal_averages(season_values):
 
     with open("average_temp.txt", "w", encoding="utf-8") as out:
@@ -130,7 +126,7 @@ def write_seasonal_averages(season_values):
                 avg = mean(vals)
                 out.write(f"{season_name}: {avg:.2f}C\n")
 
-
+# write station with largest temperature range
 def write_largest_range(station_temps):
 
     best_range = None
@@ -161,10 +157,11 @@ def write_largest_range(station_temps):
             mn, mx, r = station_stats[station]
             out.write(f"{station}: Range {r:.2f}C (Max: {mx:.2f}C, Min: {mn:.2f}C)\n")
 
-
+# Write temperature stability result in the file
 def write_stability(station_temps):
-
     station_sd = []
+
+    # Calculate S.D for each station
     for station, temps in station_temps.items():
         if len(temps) == 0:
             continue
@@ -189,7 +186,7 @@ def write_stability(station_temps):
         for s in most_variable:
             out.write(f"Most Variable: {s}: StdDev {max_sd:.2f}C\n")
 
-
+# For main programm execution 
 def main():
     csv_files = find_csv_files()
     if len(csv_files) == 0:

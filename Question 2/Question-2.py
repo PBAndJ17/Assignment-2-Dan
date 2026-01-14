@@ -1,12 +1,3 @@
-# to generate 3 file 
-#1) average_temp.txt
-#2) largest_temp_range_station.txt
-#3) temperature_stability_stations.txt
-#
-# Notes:
-#ignores missing values (NaN / empty).
-# Seasons (Australia):
-#Summer: Dec-Feb, Autumn: Mar-May, Winter: Jun-Aug, Spring: Sep-Nov
 
 import os
 import csv
@@ -75,7 +66,7 @@ def find_csv_files():
     if os.path.isdir(folder):
         base = folder
     else:
-        base = "."  # fallback
+        base = "."  
 
     csv_files = []
     for name in os.listdir(base):
@@ -87,23 +78,16 @@ def find_csv_files():
 
 
 def process_all_files(csv_files):
-    """
-    Reads all CSV files and builds:
-    1) Seasonal values across all stations and years
-    2) Per-station list of all temperature values (all months, all years)
-    """
-    # For seasonal average across ALL stations and ALL years
+    
     season_values = {s: [] for s in SEASONS.keys()}
 
-    # For station range and station stability
-    # station_temps[station_name] = [all temps across all files/months]
+
     station_temps = {}
 
     for path in csv_files:
         with open(path, "r", encoding="utf-8-sig", newline="") as f:
             reader = csv.DictReader(f)
 
-            # Basic column checks
             if STATION_COL not in reader.fieldnames:
                 raise ValueError("Missing required column: " + STATION_COL)
 
@@ -119,7 +103,6 @@ def process_all_files(csv_files):
                 if station not in station_temps:
                     station_temps[station] = []
 
-                # Collect monthly temperatures for this row/station
                 month_value = {}
                 for m in MONTHS:
                     v = to_float_or_none(row.get(m))
@@ -127,7 +110,6 @@ def process_all_files(csv_files):
                     if v is not None:
                         station_temps[station].append(v)
 
-                # Add values to seasons (each month belongs to one season)
                 for season_name, season_months in SEASONS.items():
                     for sm in season_months:
                         v = month_value.get(sm)
@@ -138,10 +120,7 @@ def process_all_files(csv_files):
 
 
 def write_seasonal_averages(season_values):
-    """
-    Writes average temperature for each season to average_temp.txt
-    Format example: Summer: 28.5C
-    """
+
     with open("average_temp.txt", "w", encoding="utf-8") as out:
         for season_name in ["Summer", "Autumn", "Winter", "Spring"]:
             vals = season_values[season_name]
@@ -153,14 +132,10 @@ def write_seasonal_averages(season_values):
 
 
 def write_largest_range(station_temps):
-    """
-    Finds station(s) with largest (max-min) across all values.
-    Writes to largest_temp_range_station.txt
-    """
+
     best_range = None
     best_list = []
 
-    # Compute range for each station
     station_stats = {}  # station -> (min, max, range)
     for station, temps in station_temps.items():
         if len(temps) == 0:
@@ -188,10 +163,7 @@ def write_largest_range(station_temps):
 
 
 def write_stability(station_temps):
-    """
-    Finds most stable (smallest std dev) and most variable (largest std dev).
-    Writes to temperature_stability_stations.txt
-    """
+
     station_sd = []
     for station, temps in station_temps.items():
         if len(temps) == 0:
@@ -231,7 +203,7 @@ def main():
     write_largest_range(station_temps)
     write_stability(station_temps)
 
-    print("Done.")
+    print("Done")
     print("Created: average_temp.txt")
     print("Created: largest_temp_range_station.txt")
     print("Created: temperature_stability_stations.txt")
